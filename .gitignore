@@ -1,6 +1,7 @@
 # I PDF dei manuali: protetti da copyright, restano in locale
 documenti/*
 !documenti/.gitkeep
+indice.json
 
 # Ambiente virtuale Python (si ricrea con uv sync)
 .venv/
@@ -12,3 +13,5 @@ documenti/*
 __pycache__/
 *.pyc
 .vscode/
+
+
