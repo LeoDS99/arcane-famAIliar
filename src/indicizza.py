@@ -1,4 +1,5 @@
 import json
+import time
 from pypdf import PdfReader
 from chunking import spezza_testo
 from embeddings import crea_embedding
@@ -15,15 +16,23 @@ print(f"Manuale spezzato in {len(pezzi)} pezzi\n")
 
 # --- 2. Calcolo gli embedding (lento, ma una volta sola) ---
 print("Calcolo gli embedding... (pazienta, ci vuole qualche minuto)")
-indice = []   # qui metto coppie {testo del pezzo, suo embedding}
+inizio_totale = time.time()          # segno l'ora di partenza
+
+indice = []
 for i, pezzo in enumerate(pezzi):
+    t0 = time.time()                 # ora prima di questo embedding
     embedding = crea_embedding(pezzo)
+    dt = time.time() - t0            # quanto è durato questo singolo embedding
+
     indice.append({"testo": pezzo, "embedding": embedding})
     if i % 20 == 0:
-        print(f"  ...{i}/{len(pezzi)}")
+        print(f"  ...{i}/{len(pezzi)}  (ultimo pezzo: {dt:.2f}s)")
+
+durata = time.time() - inizio_totale   # tempo totale
+print(f"\nEmbedding completati in {durata:.1f} secondi ({durata/60:.1f} minuti)")
 
 # --- 3. Salvo tutto su disco ---
 with open("indice.json", "w", encoding="utf-8") as f:
     json.dump(indice, f)
 
-print(f"\nFatto! Salvati {len(indice)} pezzi in indice.json")
+print(f"Salvati {len(indice)} pezzi in indice.json")
