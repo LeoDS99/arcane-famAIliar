@@ -1,0 +1,14 @@
+# I PDF dei manuali: protetti da copyright, restano in locale
+documenti/*
+!documenti/.gitkeep
+
+# Ambiente virtuale Python (si ricrea con uv sync)
+.venv/
+
+# Chiavi e segreti: MAI su GitHub
+.env
+
+# Cache di Python e VS Code
+__pycache__/
+*.pyc
+.vscode/
