@@ -8,11 +8,14 @@ lettore = PdfReader("documenti/lancer.pdf")
 print(f"Il PDF ha {len(lettore.pages)} pagine.")
 
 
-#estraggo il testo dalla prima pagina
+#estraggo tutto il testo e lo accumulo
+testo_completo = ""
 
-prima_pagina = lettore.pages[0]
-testo = prima_pagina.extract_text()
+for pagina in lettore.pages:
+    testo_completo += pagina.extract_text()
+    
+#QUanto testo abbiamo raccolto ?
+print(f"Estratti {len(testo_completo)} caratteri in totale\n")
 
-
-#stampo i primi 500 caratteri
-print(testo[:500])
+#controlliamo i primi 500 caratteri
+print(testo_completo[:500])
