@@ -26,10 +26,10 @@ def rispondi(domanda, indice):
     risultati = cerca(domanda, indice)
 
     # 2. Unisco i pezzi trovati in un unico blocco di "contesto"
-    contesto = "\n\n".join(testo for score, testo in risultati)
+    contesto = "\n\n".join(testo for _, testo in risultati)
 
     # 3. Costruisco il prompt: istruzioni + contesto + domanda
-    prompt = f"""Sei un assistente esperto del gioco di ruolo Lancer.
+    prompt = f"""Sei un assistente esperto che risponde a domande basandosi su ciò che ti viene dato.
 Rispondi alla domanda basandoti SOLO sul contesto qui sotto, tratto dal manuale.
 Se il contesto non contiene la risposta, dillo onestamente.
 
@@ -53,11 +53,12 @@ DOMANDA: {domanda}"""
 if __name__ == "__main__":
     print("Carico l'indice...")
     indice = carica_indice()
-    print(f"Pronti! {len(indice)} pezzi caricati.\n")
+    print("Fai una domanda sul manuale (scrivi 'esci' per uscire)\n")
 
-    domanda = "Quanti punti struttura ha un mech?"
-    print(f"Domanda: {domanda}\n")
+    while True:
+        domanda = input("Tu: ")
+        if domanda == "esci":
+            break
 
-    risposta = rispondi(domanda, indice)
-    print("=== Risposta ===\n")
-    print(risposta)
+        risposta = rispondi(domanda, indice)
+        print(f"\nAssistente: {risposta}\n")
