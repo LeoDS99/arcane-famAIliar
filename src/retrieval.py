@@ -1,42 +1,38 @@
-from pypdf import PdfReader
-from chunking import spezza_testo
+"""Ricerca semantica sull'indice: data una domanda, trova i pezzi più rilevanti del manuale."""
+import json
 from embeddings import crea_embedding, somiglianza
 
-# --- 1. Leggo il PDF e lo spezzo ---
-print("Leggo il PDF...")
-lettore = PdfReader("documenti/lancer.pdf")
-testo_completo = ""
-for pagina in lettore.pages:
-    testo_completo += pagina.extract_text()
 
-pezzi = spezza_testo(testo_completo, dimensione=1000)
-print(f"Manuale spezzato in {len(pezzi)} pezzi\n")
+def carica_indice(percorso="indice.json"):
+    with open(percorso, "r", encoding="utf-8") as f:
+        return json.load(f)
+    
+def cerca(domanda, indice, quanti=3):
+    #trasforma la domanda in embdedding
+    emd_domanda = crea_embedding(domanda)
+    
+    #Confronto la domanda in embedding
+    punteggi = []
+    for pezzo in indice:
+        score = somiglianza(emd_domanda, pezzo["embedding"])
+        punteggi.append((score, pezzo["testo"]))
+        
+    #Ordino dal più vicino al più lontano e tengo i primi 'quanti'
+    punteggi.sort(reverse=True, key=lambda x: x[0])
+    return punteggi[:quanti]
 
-# --- 2. Trasformo OGNI pezzo in embedding (lento: ~qualche minuto) ---
-print("Creo gli embedding dei pezzi... (pazienta, ci vuole un po')")
-embedding_pezzi = []
-for i, pezzo in enumerate(pezzi):
-    embedding_pezzi.append(crea_embedding(pezzo))
-    if i % 20 == 0:                 # ogni 20, stampo a che punto sono
-        print(f"  ...{i}/{len(pezzi)}")
-print("Embedding completati!\n")
+if __name__ == "__main__":
+    print("Carico l'indice...")
+    indice = carica_indice()
+    print(f"Pronti! {len(indice)} pezzi caricati.\n")
 
-# --- 3. La domanda ---
-domanda = "Quanti punti struttura ha un mech?"
-emb_domanda = crea_embedding(domanda)
+    domanda = "Quanti punti struttura ha un mech?"
+    print(f"Domanda: {domanda}\n")
 
-# --- 4. Confronto la domanda con ogni pezzo e trovo i migliori ---
-punteggi = []
-for i, emb in enumerate(embedding_pezzi):
-    score = somiglianza(emb_domanda, emb)
-    punteggi.append((score, i))
+    risultati = cerca(domanda, indice)
 
-punteggi.sort(reverse=True)                # ordino dal più vicino al più lontano
-
-# --- 5. Mostro i 3 pezzi più rilevanti ---
-print(f"Domanda: {domanda}\n")
-print("=== I 3 pezzi più rilevanti ===\n")
-for score, i in punteggi[:3]:
-    print(f"[somiglianza {score:.3f}]")
-    print(pezzi[i][:300])
-    print("---\n")
+    print("=== Pezzi più rilevanti ===\n")
+    for score, testo in risultati:
+        print(f"[somiglianza {score:.3f}]")
+        print(testo[:300])
+        print("---\n")
