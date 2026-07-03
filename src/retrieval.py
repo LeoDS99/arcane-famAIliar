@@ -1,6 +1,6 @@
 """Ricerca semantica sull'indice: data una domanda, trova i pezzi più rilevanti del manuale."""
 import json
-from embeddings import crea_embedding, somiglianza
+from src.embeddings import crea_embedding, somiglianza
 import httpx
 
 def carica_indice(percorso="indice.json"):
