@@ -1,12 +1,14 @@
 """API web che espone l'assistente RAG via HTTP."""
+import json
 from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from src.retrieval import carica_indice, rispondi
-from src.indicizza import indicizza_pdf
+from src.indicizza import indicizza_pdf, indicizza_pdf_stream
 
 app = FastAPI()
 app.add_middleware(
@@ -51,16 +53,16 @@ def stato_indice():
 
 @app.post("/carica")
 async def carica(file: UploadFile = File(...)):
-    """Riceve un PDF, lo salva su disco e ne (ri)costruisce l'indice.
+    """Riceve un PDF e lo salva su disco, senza ancora indicizzarlo.
 
-    Il file caricato sostituisce l'indice esistente: da questo momento
-    l'assistente risponde basandosi sul nuovo documento.
+    L'indicizzazione vera e propria avviene tramite l'endpoint
+    /indicizza-stream, che ne trasmette il progresso.
 
     Args:
         file: il PDF caricato dall'utente.
 
     Returns:
-        Il nome del file e il numero di pezzi indicizzati.
+        Il nome del file salvato.
     """
     CARTELLA_UPLOAD.mkdir(exist_ok=True)
     percorso = CARTELLA_UPLOAD / file.filename
@@ -68,11 +70,30 @@ async def carica(file: UploadFile = File(...)):
     contenuto = await file.read()
     percorso.write_bytes(contenuto)
 
-    numero_pezzi = indicizza_pdf(str(percorso))
+    return {"nome": file.filename}
 
-    stato["indice"] = carica_indice()
+@app.get("/indicizza-stream")
+def indicizza_stream(nome: str):
+    """Indicizza un PDF già caricato, trasmettendo il progresso via SSE.
 
-    return {
-        "nome": file.filename,
-        "pezzi_indicizzati": numero_pezzi,
-    }
+    Per ogni pezzo elaborato invia un evento con lo stato di avanzamento.
+    Al termine invia un evento finale e ricarica l'indice in memoria.
+
+    Args:
+        nome: nome del file (già salvato in CARTELLA_UPLOAD) da indicizzare.
+
+    Returns:
+        Uno stream di eventi Server-Sent Events.
+    """
+    percorso = CARTELLA_UPLOAD / nome
+
+    def genera_eventi():
+        for fatti, totale in indicizza_pdf_stream(str(percorso)):
+            dati = json.dumps({"fatti": fatti, "totale": totale})
+            yield f"data: {dati}\n\n"
+
+        stato["indice"] = carica_indice()
+        finale = json.dumps({"completato": True, "pezzi": len(stato["indice"])})
+        yield f"data: {finale}\n\n"
+
+    return StreamingResponse(genera_eventi(), media_type="text/event-stream")
