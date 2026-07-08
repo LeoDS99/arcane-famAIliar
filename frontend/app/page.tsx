@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import UploadModal from './components/UploadModal';
 type Messaggio = {
  ruolo: 'utente' | 'assistente';
@@ -12,6 +12,25 @@ export default function Home() {
  const [input, setInput] = useState('');
  const [caricamento, setCaricamento] = useState(false);
  const [prontoPerChat, setProntoPerChat] = useState(false);
+ const [verificaIniziale, setVerificaIniziale] = useState(true);
+
+ useEffect(() => {
+  async function controllaIndice() {
+   try {
+    const res = await fetch('http://localhost:8000/stato');
+    const dati = await res.json();
+    if (dati.indice_presente) {
+     setProntoPerChat(true);
+    }
+   } catch {
+    // Se il backend non risponde, restiamo sulla modale.
+   } finally {
+    setVerificaIniziale(false);
+   }
+  }
+
+  controllaIndice();
+ }, []);
 
  async function invia() {
   if (!input.trim()) return;
@@ -44,14 +63,20 @@ export default function Home() {
 
  return (
   <div className='flex h-screen justify-center bg-gray-900 text-gray-100'>
-   {!prontoPerChat && (
+   {!verificaIniziale && !prontoPerChat && (
     <UploadModal onCompletato={() => setProntoPerChat(true)} />
    )}
 
    <main className='flex w-full max-w-3xl flex-col px-6 py-6'>
-    <h1 className='mb-4 text-2xl font-bold text-purple-300'>
-     Arcane famAIliar 🔮
-    </h1>
+    <div className='mb-4 flex items-center justify-between'>
+     <h1 className='text-2xl font-bold text-purple-300'>Arcane famAIliar 🔮</h1>
+     <button
+      onClick={() => setProntoPerChat(false)}
+      className='rounded border border-gray-600 px-3 py-1 text-sm text-gray-300 hover:bg-gray-800'
+     >
+      Cambia PDF
+     </button>
+    </div>
 
     <div className='flex-1 space-y-3 overflow-y-auto'>
      {messaggi.map((m, i) => (
