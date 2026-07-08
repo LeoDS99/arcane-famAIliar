@@ -67,9 +67,7 @@ export default function UploadModal({ onCompletato }: Props) {
   return (
    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/70'>
     <div className='w-full max-w-md rounded-lg bg-gray-800 p-6 text-gray-100'>
-     <h2 className='mb-2 text-xl font-bold text-purple-300'>
-      Carica un manuale PDF
-     </h2>
+     <h2 className='mb-2 text-xl font-bold text-purple-300'>Carica un PDF</h2>
      <p className='mb-4 text-sm text-gray-400'>
       Scegli un PDF da indicizzare. L&apos;assistente risponderà basandosi su
       questo documento.
