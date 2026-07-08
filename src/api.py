@@ -33,6 +33,22 @@ def chiedi(domanda: Domanda):
     return {"risposta": risposta}
 
 
+@app.get("/stato")
+def stato_indice():
+    """Indica se un indice è già caricato e con quanti pezzi.
+
+    Permette al frontend di sapere, all'avvio, se mostrare la modale
+    di upload (nessun indice) o entrare direttamente in chat.
+
+    Returns:
+        Un flag `indice_presente` e il numero di pezzi indicizzati.
+    """
+    numero_pezzi = len(stato["indice"])
+    return {
+        "indice_presente": numero_pezzi > 0,
+        "pezzi": numero_pezzi,
+    }
+
 @app.post("/carica")
 async def carica(file: UploadFile = File(...)):
     """Riceve un PDF, lo salva su disco e ne (ri)costruisce l'indice.
