@@ -1,6 +1,7 @@
 """Ricerca semantica sull'indice: data una domanda, trova i pezzi più rilevanti del manuale."""
 import json
 from src.embeddings import crea_embedding, somiglianza
+from src.config import OLLAMA_HOST
 import httpx
 
 def carica_indice(percorso="indice.json"):
@@ -40,7 +41,7 @@ DOMANDA: {domanda}"""
 
     # 4. Chiedo al modello di generare la risposta
     risposta = httpx.post(
-        "http://localhost:11434/api/chat",
+      f"{OLLAMA_HOST}/api/chat",
         json={
             "model": "llama3.2",
             "messages": [{"role": "user", "content": prompt}],

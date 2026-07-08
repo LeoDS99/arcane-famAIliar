@@ -1,9 +1,11 @@
 import httpx
 
+from src.config import OLLAMA_HOST
+
 
 def crea_embedding(testo):
     risposta = httpx.post(
-        "http://localhost:11434/api/embeddings",
+        f"{OLLAMA_HOST}/api/embeddings",
         json={"model": "nomic-embed-text", "prompt": testo},
         timeout= 60
     )
