@@ -19,8 +19,8 @@ app.add_middleware(
 CARTELLA_UPLOAD = Path("uploads")
 
 print(">>> Carico l'indice...")
-indice = carica_indice()
-print(f">>> Pronti! {len(indice)} pezzi caricati.")
+stato = {"indice": carica_indice()}
+print(f">>> Pronti! {len(stato['indice'])} pezzi caricati.")
 
 
 class Domanda(BaseModel):
@@ -29,7 +29,7 @@ class Domanda(BaseModel):
 
 @app.post("/chiedi")
 def chiedi(domanda: Domanda):
-    risposta = rispondi(domanda.testo, indice)
+    risposta = rispondi(domanda.testo, stato["indice"])
     return {"risposta": risposta}
 
 
@@ -53,6 +53,8 @@ async def carica(file: UploadFile = File(...)):
     percorso.write_bytes(contenuto)
 
     numero_pezzi = indicizza_pdf(str(percorso))
+
+    stato["indice"] = carica_indice()
 
     return {
         "nome": file.filename,
