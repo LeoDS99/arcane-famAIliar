@@ -1,10 +1,25 @@
 """Ricerca semantica sull'indice: data una domanda, trova i pezzi più rilevanti del manuale."""
 import json
+import os
+import httpx
 from src.embeddings import crea_embedding, somiglianza
 from src.config import OLLAMA_HOST
-import httpx
 
 def carica_indice(percorso="indice.json"):
+    """Carica l'indice degli embedding da disco.
+
+    Se il file non esiste ancora (es. nessun PDF è stato indicizzato),
+    restituisce una lista vuota invece di sollevare un'eccezione, così
+    l'applicazione può avviarsi comunque.
+
+    Args:
+        percorso: percorso del file JSON dell'indice.
+
+    Returns:
+        La lista dei pezzi indicizzati, o una lista vuota se il file manca.
+    """
+    if not os.path.exists(percorso):
+        return []
     with open(percorso, "r", encoding="utf-8") as f:
         return json.load(f)
     
