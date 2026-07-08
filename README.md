@@ -4,7 +4,7 @@
 
 ## Overview
 
-**Arcane famAIliar** is a Retrieval-Augmented Generation (RAG) assistant that lets you ask natural-language questions about any PDF and get answers grounded in the source material — not hallucinated. Upload a document through the web interface, ask a question, and it retrieves the relevant passages and generates an answer based only on them. If the answer isn't in the document, it says so instead of making something up.
+**Arcane famAIliar** is a Retrieval-Augmented Generation (RAG) assistant that lets you ask natural-language questions about any PDF and get answers grounded in the source material — not hallucinated. Upload a document through the web interface (with a live progress bar while it's indexed), ask a question, and it retrieves the relevant passages and generates an answer based only on them. If the answer isn't in the document, it says so instead of making something up.
 
 Built entirely with local models (via Ollama), it runs offline, costs nothing to query, and keeps your documents private — a real advantage when working with sensitive material.
 
@@ -20,7 +20,8 @@ flowchart LR
         UI[Next.js UI<br/>upload + chat]
     end
     subgraph Backend[FastAPI backend]
-        UP[/carica<br/>upload + index/]
+        UP[/carica<br/>save PDF/]
+        IDXS[/indicizza-stream<br/>index + SSE progress/]
         ASK[/chiedi<br/>ask/]
     end
     subgraph Ollama[Ollama · local]
@@ -29,8 +30,10 @@ flowchart LR
     end
 
     UI -->|PDF| UP
-    UP --> EMB
-    UP --> IDX[(Index on disk)]
+    UI -->|start indexing| IDXS
+    IDXS -->|progress events| UI
+    IDXS --> EMB
+    IDXS --> IDX[(Index on disk)]
     UI -->|question| ASK
     ASK --> IDX
     ASK --> EMB
@@ -44,7 +47,8 @@ The pipeline splits into an **indexing** phase (when you upload a PDF) and an in
 1. **PDF extraction** — text is pulled from every page (`pypdf`)
 2. **Chunking** — the raw text is split into fixed-size chunks (~1000 chars)
 3. **Embedding** — each chunk becomes a 768-dimension vector capturing its meaning (`nomic-embed-text`)
-4. **Caching** — chunks and embeddings are persisted to disk, so this slow step runs only once per document
+4. **Progress streaming** — as each chunk is embedded, progress is streamed to the browser (SSE) to drive the live progress bar
+5. **Caching** — chunks and embeddings are persisted to disk, so this slow step runs only once per document
 
 **Querying (instant):**
 1. The saved index is loaded into memory
@@ -54,11 +58,21 @@ The pipeline splits into an **indexing** phase (when you upload a PDF) and an in
 
 Uploading a new PDF **replaces** the current index, and the backend reloads it in memory immediately — so the chat starts answering about the new document without a restart.
 
+## Features
+
+- **Upload from the browser** — drop in a PDF and index it, no command line needed
+- **Live progress bar** — indexing streams its progress in real time via Server-Sent Events (SSE), chunk by chunk
+- **Smart startup** — on load, the app asks the backend whether an index already exists: if so, you go straight to chat; if not, you're prompted to upload
+- **Change PDF anytime** — swap the active document from the chat with one click
+- **Grounded answers** — responses are based only on the uploaded document, and the assistant admits when the answer isn't there
+- **Fully local & private** — no cloud, no API keys, no cost; your documents never leave your machine
+
 ## Tech stack
 
 **Backend**
 - **Python** — core language
 - **FastAPI + uvicorn** — async web API exposing the assistant over HTTP
+- **Server-Sent Events (SSE)** — streams indexing progress to the frontend in real time
 - **Ollama** — local model inference (no API keys, no cloud, no cost)
 - **nomic-embed-text** — embedding model for semantic search
 - **llama3.2** — generation model
