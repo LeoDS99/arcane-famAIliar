@@ -146,7 +146,9 @@ return (
       </span>
      </div>
     ))}
-    {caricamento && <div className='text-gray-400'>Sto pensando…</div>}
+    {caricamento && messaggi[messaggi.length - 1]?.testo === '' && (
+     <div className='text-gray-400'>Sto pensando…</div>
+    )}
    </div>
 
    <div className='mt-4 flex gap-2'>
