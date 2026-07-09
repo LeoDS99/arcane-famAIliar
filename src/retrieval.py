@@ -73,6 +73,57 @@ RISPOSTA:"""
     )
     return risposta.json()["message"]["content"]
 
+def rispondi_stream(domanda, indice):
+    """Genera la risposta in streaming, cedendo i frammenti man mano.
+
+    Come rispondi(), ma invece di attendere la risposta completa la
+    trasmette pezzo per pezzo (token per token) sfruttando lo streaming
+    nativo di Ollama. Utile per mostrare la risposta parola per parola.
+
+    Args:
+        domanda: la domanda dell'utente.
+        indice: l'indice degli embedding su cui cercare.
+
+    Yields:
+        Frammenti di testo della risposta, man mano che vengono generati.
+    """
+    risultati = cerca(domanda, indice)
+    contesto = "\n\n".join(testo for _, testo in risultati)
+
+    prompt = f"""Sei un assistente che risponde a domande su un documento fornito dall'utente.
+
+Istruzioni:
+- Rispondi usando ESCLUSIVAMENTE le informazioni presenti nel CONTESTO qui sotto.
+- Concentrati sulla DOMANDA dell'utente: estrai e sintetizza le informazioni pertinenti, ignorando i dettagli non attinenti anche se presenti nel contesto.
+- Se la domanda chiede la definizione o la spiegazione di un concetto, forniscila in modo chiaro e diretto.
+- Se il contesto non contiene abbastanza informazioni per rispondere, dillo onestamente senza inventare.
+- Rispondi nella stessa lingua della domanda.
+
+CONTESTO:
+{contesto}
+
+DOMANDA: {domanda}
+
+RISPOSTA:"""
+
+    with httpx.stream(
+        "POST",
+        f"{OLLAMA_HOST}/api/chat",
+        json={
+            "model": "llama3.2",
+            "messages": [{"role": "user", "content": prompt}],
+            "stream": True,
+        },
+        timeout=120,
+    ) as risposta:
+        for riga in risposta.iter_lines():
+            if not riga:
+                continue
+            dato = json.loads(riga)
+            frammento = dato.get("message", {}).get("content", "")
+            if frammento:
+                yield frammento
+
 if __name__ == "__main__":
     print("Carico l'indice...")
     indice = carica_indice()

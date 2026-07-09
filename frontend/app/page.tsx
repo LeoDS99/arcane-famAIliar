@@ -51,7 +51,7 @@ useEffect(() => {
   controllaIndice();
  }, []);
 
-async function invia() {
+function invia() {
  if (!input.trim()) return;
 
  const domanda = input;
@@ -59,25 +59,38 @@ async function invia() {
  setMessaggi((prev) => [...prev, { ruolo: 'utente', testo: domanda }]);
  setCaricamento(true);
 
- try {
-  const res = await fetch('http://localhost:8000/chiedi', {
-   method: 'POST',
-   headers: { 'Content-Type': 'application/json' },
-   body: JSON.stringify({ testo: domanda }),
+ // Aggiungo subito una bolla vuota per l'assistente, che riempirò man mano.
+ setMessaggi((prev) => [...prev, { ruolo: 'assistente', testo: '' }]);
+
+ const sorgente = new EventSource(
+  `http://localhost:8000/chiedi-stream?domanda=${encodeURIComponent(domanda)}`,
+ );
+
+ sorgente.onmessage = (evento) => {
+  const dati = JSON.parse(evento.data);
+
+  if (dati.completato) {
+   sorgente.close();
+   setCaricamento(false);
+   return;
+  }
+
+  // Appendo il frammento all'ultimo messaggio (la bolla dell'assistente).
+  setMessaggi((prev) => {
+   const aggiornati = [...prev];
+   const ultimo = aggiornati[aggiornati.length - 1];
+   aggiornati[aggiornati.length - 1] = {
+    ...ultimo,
+    testo: ultimo.testo + dati.frammento,
+   };
+   return aggiornati;
   });
-  const dati = await res.json();
-  setMessaggi((prev) => [
-   ...prev,
-   { ruolo: 'assistente', testo: dati.risposta },
-  ]);
- } catch {
-  setMessaggi((prev) => [
-   ...prev,
-   { ruolo: 'assistente', testo: 'Errore: il backend risponde?' },
-  ]);
- } finally {
+ };
+
+ sorgente.onerror = () => {
+  sorgente.close();
   setCaricamento(false);
- }
+ };
 }
 
 return (

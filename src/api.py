@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from src.retrieval import carica_indice, rispondi
+from src.retrieval import carica_indice, rispondi, rispondi_stream
 from src.indicizza import indicizza_pdf, indicizza_pdf_stream
 
 app = FastAPI()
@@ -33,6 +33,29 @@ class Domanda(BaseModel):
 def chiedi(domanda: Domanda):
     risposta = rispondi(domanda.testo, stato["indice"])
     return {"risposta": risposta}
+
+@app.get("/chiedi-stream")
+def chiedi_stream(domanda: str):
+    """Risponde a una domanda trasmettendo la risposta via SSE.
+
+    A differenza di /chiedi, che risponde in blocco, questo endpoint
+    trasmette la risposta frammento per frammento man mano che il
+    modello la genera, per mostrarla parola per parola.
+
+    Args:
+        domanda: la domanda dell'utente.
+
+    Returns:
+        Uno stream di eventi Server-Sent Events con i frammenti di risposta.
+    """
+    def genera_eventi():
+        for frammento in rispondi_stream(domanda, stato["indice"]):
+            dati = json.dumps({"frammento": frammento})
+            yield f"data: {dati}\n\n"
+
+        yield f"data: {json.dumps({'completato': True})}\n\n"
+
+    return StreamingResponse(genera_eventi(), media_type="text/event-stream")
 
 
 @app.get("/stato")
