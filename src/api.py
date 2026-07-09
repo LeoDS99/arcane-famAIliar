@@ -50,6 +50,37 @@ def stato_indice():
         "indice_presente": numero_pezzi > 0,
         "pezzi": numero_pezzi,
     }
+    
+    
+@app.get("/debug-cerca")
+def debug_cerca(domanda: str, quanti: int = 3):
+    """Endpoint diagnostico: mostra i pezzi recuperati per una domanda.
+
+    Non passa dal modello di generazione: restituisce solo i chunk che
+    la ricerca semantica considera più rilevanti, con il loro punteggio.
+    Utile per capire se un problema è nel retrieval o nella generazione.
+
+    Args:
+        domanda: la domanda da cercare nell'indice.
+        quanti: quanti pezzi recuperare (default 3).
+
+    Returns:
+        La lista dei pezzi con punteggio e un'anteprima del testo.
+    """
+    from src.retrieval import cerca
+
+    risultati = cerca(domanda, stato["indice"], quanti=quanti)
+
+    return {
+        "domanda": domanda,
+        "risultati": [
+            {
+                "punteggio": round(score, 4),
+                "anteprima": testo[:300],
+            }
+            for score, testo in risultati
+        ],
+    }
 
 @app.post("/carica")
 async def carica(file: UploadFile = File(...)):
