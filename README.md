@@ -2,6 +2,8 @@
 
 > A local, privacy-first RAG assistant that answers questions about any PDF document — powered by Ollama, running entirely on your machine.
 
+![Arcane famAIliar chat interface](docs/chat.png)
+
 ## Overview
 
 **Arcane famAIliar** is a Retrieval-Augmented Generation (RAG) assistant that lets you ask natural-language questions about any PDF and get answers grounded in the source material — not hallucinated. Upload a document through the web interface (with a live progress bar while it's indexed), ask a question, and it retrieves the relevant passages and generates an answer based only on them. If the answer isn't in the document, it says so instead of making something up.
@@ -59,6 +61,8 @@ The pipeline splits into an **indexing** phase (when you upload a PDF) and an in
 Uploading a new PDF **replaces** the current index, and the backend reloads it in memory immediately — so the chat starts answering about the new document without a restart.
 
 ## Features
+
+![Uploading and indexing a PDF](docs/upload.png)
 
 - **Upload from the browser** — drop in a PDF and index it, no command line needed
 - **Live progress bar** — indexing streams its progress in real time via Server-Sent Events (SSE), chunk by chunk
