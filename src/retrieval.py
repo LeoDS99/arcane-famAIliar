@@ -45,14 +45,21 @@ def rispondi(domanda, indice):
     contesto = "\n\n".join(testo for _, testo in risultati)
 
     # 3. Costruisco il prompt: istruzioni + contesto + domanda
-    prompt = f"""Sei un assistente esperto che risponde a domande basandosi su ciò che ti viene dato.
-Rispondi alla domanda basandoti SOLO sul contesto qui sotto, tratto dal manuale.
-Se il contesto non contiene la risposta, dillo onestamente.
+    prompt = f"""Sei un assistente che risponde a domande su un documento fornito dall'utente.
+
+Istruzioni:
+- Rispondi usando ESCLUSIVAMENTE le informazioni presenti nel CONTESTO qui sotto.
+- Concentrati sulla DOMANDA dell'utente: estrai e sintetizza le informazioni pertinenti, ignorando i dettagli non attinenti anche se presenti nel contesto.
+- Se la domanda chiede la definizione o la spiegazione di un concetto, forniscila in modo chiaro e diretto.
+- Se il contesto non contiene abbastanza informazioni per rispondere, dillo onestamente senza inventare.
+- Rispondi nella stessa lingua della domanda.
 
 CONTESTO:
 {contesto}
 
-DOMANDA: {domanda}"""
+DOMANDA: {domanda}
+
+RISPOSTA:"""
 
     # 4. Chiedo al modello di generare la risposta
     risposta = httpx.post(
