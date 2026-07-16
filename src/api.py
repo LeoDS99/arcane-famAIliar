@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -31,6 +31,20 @@ class Domanda(BaseModel):
 
 @app.post("/chiedi")
 def chiedi(domanda: Domanda):
+    """Risponde a una domanda basandosi sull'indice caricato.
+
+    Args:
+        domanda: la domanda dell'utente.
+
+    Raises:
+        HTTPException: 400 se la domanda è vuota.
+
+    Returns:
+        La risposta generata dal modello.
+    """
+    if not domanda.testo.strip():
+        raise HTTPException(status_code=400, detail="La domanda non può essere vuota.")
+
     risposta = rispondi(domanda.testo, stato["indice"])
     return {"risposta": risposta}
 
@@ -48,6 +62,8 @@ def chiedi_stream(domanda: str):
     Returns:
         Uno stream di eventi Server-Sent Events con i frammenti di risposta.
     """
+    if not domanda.strip():
+        raise HTTPException(status_code=400, detail="La domanda non può essere vuota.")
     def genera_eventi():
         for frammento in rispondi_stream(domanda, stato["indice"]):
             dati = json.dumps({"frammento": frammento})
@@ -107,25 +123,35 @@ def debug_cerca(domanda: str, quanti: int = 3):
 
 @app.post("/carica")
 async def carica(file: UploadFile = File(...)):
-    """Riceve un PDF e lo salva su disco, senza ancora indicizzarlo.
+    """Riceve un PDF, ne verifica la validità e lo salva su disco.
 
-    L'indicizzazione vera e propria avviene tramite l'endpoint
-    /indicizza-stream, che ne trasmette il progresso.
+    Il file viene accettato solo se è un vero PDF (controllo sulla firma
+    dei primi byte, non solo sull'estensione). L'indicizzazione avviene
+    poi tramite l'endpoint /indicizza-stream.
 
     Args:
         file: il PDF caricato dall'utente.
 
+    Raises:
+        HTTPException: 400 se il file non è un PDF valido.
+
     Returns:
         Il nome del file salvato.
     """
+    contenuto = await file.read()
+
+    # Un PDF valido inizia sempre con la firma "%PDF".
+    if not contenuto.startswith(b"%PDF"):
+        raise HTTPException(
+            status_code=400,
+            detail="Il file caricato non è un PDF valido.",
+        )
+
     CARTELLA_UPLOAD.mkdir(exist_ok=True)
     percorso = CARTELLA_UPLOAD / file.filename
-
-    contenuto = await file.read()
     percorso.write_bytes(contenuto)
 
     return {"nome": file.filename}
-
 @app.get("/indicizza-stream")
 def indicizza_stream(nome: str):
     """Indicizza un PDF già caricato, trasmettendo il progresso via SSE.
