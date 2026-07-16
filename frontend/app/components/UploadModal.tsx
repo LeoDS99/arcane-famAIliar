@@ -37,9 +37,13 @@ export default function UploadModal({
     body: datiForm,
    });
 
-   if (!res.ok) throw new Error('Errore durante il caricamento');
-
    const dati = await res.json();
+
+   if (!res.ok) {
+    setErrore(dati.detail ?? 'Errore durante il caricamento. Riprova.');
+    setCaricamento(false);
+    return;
+   }
 
    // Fase 2: avvio l'indicizzazione e ascolto il progresso via SSE.
    const sorgente = new EventSource(
@@ -65,7 +69,7 @@ export default function UploadModal({
     setCaricamento(false);
    };
   } catch {
-   setErrore('Qualcosa è andato storto. Riprova.');
+   setErrore('Impossibile contattare il server. Riprova.');
    setCaricamento(false);
   }
  }
