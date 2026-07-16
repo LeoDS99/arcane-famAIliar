@@ -16,3 +16,6 @@ __pycache__/
 
 # Screenshot di lavoro nella root del progetto
 /*.png
+
+# PDF caricati dagli utenti (contengono dati personali)
+uploads/
