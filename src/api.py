@@ -56,18 +56,21 @@ def chiedi_stream(domanda: str):
     trasmette la risposta frammento per frammento man mano che il
     modello la genera, per mostrarla parola per parola.
 
-    Args:
+   Args:
         domanda: la domanda dell'utente.
 
+    Raises:
+        HTTPException: 400 se la domanda è vuota.
+
     Returns:
-        Uno stream di eventi Server-Sent Events con i frammenti di risposta.
+        Uno stream SSE: prima le fonti usate, poi i frammenti di risposta.
     """
     if not domanda.strip():
         raise HTTPException(status_code=400, detail="La domanda non può essere vuota.")
+    
     def genera_eventi():
-        for frammento in rispondi_stream(domanda, stato["indice"]):
-            dati = json.dumps({"frammento": frammento})
-            yield f"data: {dati}\n\n"
+        for tipo, dato in rispondi_stream(domanda, stato["indice"]):
+            yield f"data: {json.dumps({tipo: dato})}\n\n"
 
         yield f"data: {json.dumps({'completato': True})}\n\n"
 

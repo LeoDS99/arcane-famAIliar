@@ -84,11 +84,19 @@ def rispondi_stream(domanda, indice):
         domanda: la domanda dell'utente.
         indice: l'indice degli embedding su cui cercare.
 
-    Yields:
-        Frammenti di testo della risposta, man mano che vengono generati.
+   Yields:
+        Tuple (tipo, dato): prima ("fonti", lista dei pezzi usati),
+        poi ("frammento", testo) per ogni pezzo di risposta generato.
     """
     risultati = cerca(domanda, indice)
     contesto = "\n\n".join(testo for _, testo in risultati)
+
+    # Prima di generare, comunico da quali pezzi del documento nasce la risposta.
+    fonti = [
+        {"punteggio": round(score, 4), "testo": testo}
+        for score, testo in risultati
+    ]
+    yield ("fonti", fonti)
 
     prompt = f"""Sei un assistente che risponde a domande su un documento fornito dall'utente.
 
@@ -122,7 +130,7 @@ RISPOSTA:"""
             dato = json.loads(riga)
             frammento = dato.get("message", {}).get("content", "")
             if frammento:
-                yield frammento
+                yield ("frammento", frammento)
 
 if __name__ == "__main__":
     print("Carico l'indice...")
