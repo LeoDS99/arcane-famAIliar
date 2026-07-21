@@ -19,3 +19,6 @@ __pycache__/
 
 # PDF caricati dagli utenti (contengono dati personali)
 uploads/
+
+# Indici dei documenti (contengono il testo dei PDF)
+indici/

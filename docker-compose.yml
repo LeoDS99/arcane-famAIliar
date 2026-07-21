@@ -8,6 +8,7 @@ services:
     volumes:
       - ./indice.json:/app/indice.json
       - ./uploads:/app/uploads
+      - ./indici:/app/indici
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

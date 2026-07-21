@@ -5,7 +5,22 @@ import httpx
 from src.embeddings import crea_embedding, somiglianza
 from src.config import OLLAMA_HOST
 
-def carica_indice(percorso="indice.json"):
+def carica_indice(percorso):
+    """Carica un indice di embedding da disco.
+
+    Se il file non esiste (documento non ancora indicizzato), restituisce
+    una lista vuota invece di sollevare un'eccezione.
+
+    Args:
+        percorso: percorso del file JSON dell'indice da caricare.
+
+    Returns:
+        La lista dei pezzi indicizzati, o una lista vuota se il file manca.
+    """
+    if not os.path.exists(percorso):
+        return []
+    with open(percorso, "r", encoding="utf-8") as f:
+        return json.load(f)
     """Carica l'indice degli embedding da disco.
 
     Se il file non esiste ancora (es. nessun PDF è stato indicizzato),

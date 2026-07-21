@@ -9,6 +9,8 @@ from pydantic import BaseModel
 
 from src.retrieval import carica_indice, rispondi, rispondi_stream
 from src.indicizza import indicizza_pdf, indicizza_pdf_stream
+from src.documenti import elenca_documenti, percorso_indice
+
 
 app = FastAPI()
 app.add_middleware(
@@ -20,10 +22,10 @@ app.add_middleware(
 
 CARTELLA_UPLOAD = Path("uploads")
 
-print(">>> Carico l'indice...")
-stato = {"indice": carica_indice()}
-print(f">>> Pronti! {len(stato['indice'])} pezzi caricati.")
-
+# Documento attualmente attivo e il suo indice in memoria.
+# All'avvio nessun documento è attivo: l'utente ne sceglie uno.
+stato = {"documento": None, "indice": []}
+print(">>> Backend pronto. Nessun documento attivo.")
 
 class Domanda(BaseModel):
     testo: str
@@ -79,18 +81,56 @@ def chiedi_stream(domanda: str):
 
 @app.get("/stato")
 def stato_indice():
-    """Indica se un indice è già caricato e con quanti pezzi.
-
-    Permette al frontend di sapere, all'avvio, se mostrare la modale
-    di upload (nessun indice) o entrare direttamente in chat.
+    """Indica quale documento è attivo e con quanti pezzi.
 
     Returns:
-        Un flag `indice_presente` e il numero di pezzi indicizzati.
+        Il documento attivo (o None), un flag di presenza e i pezzi.
     """
     numero_pezzi = len(stato["indice"])
     return {
+        "documento": stato["documento"],
         "indice_presente": numero_pezzi > 0,
         "pezzi": numero_pezzi,
+    }
+    
+@app.get("/documenti")
+def documenti():
+    """Elenca i PDF caricati e se ciascuno è già indicizzato.
+
+    Returns:
+        La lista dei documenti nella libreria.
+    """
+    return {"documenti": elenca_documenti()}
+    
+    
+@app.post("/attiva")
+def attiva(nome: str):
+    """Rende attivo un documento già indicizzato, senza re-indicizzare.
+
+    Carica in memoria l'indice del documento indicato, così le domande
+    successive vengono risposte basandosi su di esso.
+
+    Args:
+        nome: nome del PDF da attivare (deve essere già indicizzato).
+
+    Raises:
+        HTTPException: 404 se il documento non ha un indice.
+
+    Returns:
+        Il documento attivato e il numero di pezzi caricati.
+    """
+    destinazione = percorso_indice(nome)
+    if not destinazione.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Documento non indicizzato.",
+        )
+
+    stato["documento"] = nome
+    stato["indice"] = carica_indice(str(destinazione))
+    return {
+        "documento": nome,
+        "pezzi": len(stato["indice"]),
     }
     
     
@@ -159,8 +199,9 @@ async def carica(file: UploadFile = File(...)):
 def indicizza_stream(nome: str):
     """Indicizza un PDF già caricato, trasmettendo il progresso via SSE.
 
-    Per ogni pezzo elaborato invia un evento con lo stato di avanzamento.
-    Al termine invia un evento finale e ricarica l'indice in memoria.
+    L'indice viene salvato in indici/<nome>.json e il documento diventa
+    quello attivo. Per ogni pezzo invia un evento di avanzamento; al
+    termine invia un evento finale.
 
     Args:
         nome: nome del file (già salvato in CARTELLA_UPLOAD) da indicizzare.
@@ -168,14 +209,17 @@ def indicizza_stream(nome: str):
     Returns:
         Uno stream di eventi Server-Sent Events.
     """
-    percorso = CARTELLA_UPLOAD / nome
+    percorso_pdf = CARTELLA_UPLOAD / nome
+    destinazione = str(percorso_indice(nome))
 
     def genera_eventi():
-        for fatti, totale in indicizza_pdf_stream(str(percorso)):
+        for fatti, totale in indicizza_pdf_stream(str(percorso_pdf), destinazione):
             dati = json.dumps({"fatti": fatti, "totale": totale})
             yield f"data: {dati}\n\n"
 
-        stato["indice"] = carica_indice()
+        # Il documento appena indicizzato diventa quello attivo.
+        stato["documento"] = nome
+        stato["indice"] = carica_indice(destinazione)
         finale = json.dumps({"completato": True, "pezzi": len(stato["indice"])})
         yield f"data: {finale}\n\n"
 

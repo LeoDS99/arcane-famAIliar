@@ -1,29 +1,28 @@
 import json
 import logging
+from pathlib import Path
 
 from pypdf import PdfReader
 
 from src.chunking import spezza_testo
 from src.embeddings import crea_embedding
-
+from src.documenti import percorso_indice
 # Dimensione (in caratteri) di ogni pezzo in cui viene spezzato il testo.
 DIMENSIONE_CHUNK = 1000
-# File su cui viene salvato l'indice degli embedding.
-PERCORSO_INDICE = "indice.json"
-
 
 logger = logging.getLogger(__name__)
 
 
-def indicizza_pdf_stream(percorso_pdf: str):
+def indicizza_pdf_stream(percorso_pdf: str, percorso_indice: str):
     """Indicizza un PDF cedendo il progresso pezzo per pezzo.
 
     È un generator: per ogni chunk elaborato cede una tupla
     (fatti, totale), utile per mostrare una barra di avanzamento.
-    Al termine salva l'indice completo su disco.
+    Al termine salva l'indice completo nel percorso indicato.
 
     Args:
         percorso_pdf: percorso del file PDF da indicizzare.
+        percorso_indice: percorso del file JSON dove salvare l'indice.
 
     Yields:
         Tuple (fatti, totale) man mano che i pezzi vengono elaborati.
@@ -44,13 +43,13 @@ def indicizza_pdf_stream(percorso_pdf: str):
         indice.append({"testo": pezzo, "embedding": embedding})
         yield (i + 1, totale)
 
-    with open(PERCORSO_INDICE, "w", encoding="utf-8") as f:
+    Path(percorso_indice).parent.mkdir(parents=True, exist_ok=True)
+    with open(percorso_indice, "w", encoding="utf-8") as f:
         json.dump(indice, f)
 
     logger.info("Indicizzazione completata: %d pezzi salvati", len(indice))
 
-
-def indicizza_pdf(percorso_pdf: str) -> int:
+def indicizza_pdf(percorso_pdf: str, percorso_indice: str) -> int:
     """Indicizza un PDF e restituisce il numero di pezzi indicizzati.
 
     Wrapper sincrono attorno a indicizza_pdf_stream: consuma tutto il
@@ -59,18 +58,21 @@ def indicizza_pdf(percorso_pdf: str) -> int:
 
     Args:
         percorso_pdf: percorso del file PDF da indicizzare.
+        percorso_indice: percorso del file JSON dove salvare l'indice.
 
     Returns:
         Il numero di pezzi indicizzati.
     """
     totale = 0
-    for _, totale in indicizza_pdf_stream(percorso_pdf):
+    for _, totale in indicizza_pdf_stream(percorso_pdf, percorso_indice):
         pass
     return totale
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    numero_pezzi = indicizza_pdf("documenti/lancer.pdf")
-    print(f"Indicizzati {numero_pezzi} pezzi in {PERCORSO_INDICE}")
+
+    percorso_pdf = "documenti/lancer.pdf"
+    destinazione = str(percorso_indice(percorso_pdf))
+    numero_pezzi = indicizza_pdf(percorso_pdf, destinazione)
+    print(f"Indicizzati {numero_pezzi} pezzi in {destinazione}")

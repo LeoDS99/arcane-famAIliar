@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import UploadModal from './components/UploadModal';
-
+import LibreriaModal from './components/LibreriaModal';
 
 type Fonte = {
  punteggio: number;
@@ -21,7 +20,7 @@ export default function Home() {
  const [caricamento, setCaricamento] = useState(false);
  const [prontoPerChat, setProntoPerChat] = useState(false);
  const [verificaIniziale, setVerificaIniziale] = useState(true);
- const [indicePresente, setIndicePresente] = useState(false);
+ const [documentoAttivo, setDocumentoAttivo] = useState<string | null>(null);
  useEffect(() => {
   // Piccola utility: aspetta 'ms' millisecondi.
   const aspetta = (ms: number) =>
@@ -38,7 +37,7 @@ export default function Home() {
 
      if (dati.indice_presente) {
       setProntoPerChat(true);
-      setIndicePresente(true);
+      setDocumentoAttivo(dati.documento);
      }
      // Il backend ha risposto: usciamo dal ciclo di retry.
      setVerificaIniziale(false);
@@ -113,12 +112,16 @@ export default function Home() {
  return (
   <div className='flex h-screen justify-center bg-gray-900 text-gray-100'>
    {!verificaIniziale && !prontoPerChat && (
-    <UploadModal
-     chiudibile={indicePresente}
+    <LibreriaModal
+     documentoAttivo={documentoAttivo}
+     chiudibile={documentoAttivo !== null}
      onAnnulla={() => setProntoPerChat(true)}
-     onCompletato={() => {
+     onAttivato={async () => {
+      // Dopo attivazione/upload, rileggo lo stato e entro in chat.
+      const res = await fetch('http://localhost:8000/stato');
+      const dati = await res.json();
+      setDocumentoAttivo(dati.documento);
       setProntoPerChat(true);
-      setIndicePresente(true);
      }}
     />
    )}
