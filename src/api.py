@@ -134,6 +134,38 @@ def attiva(nome: str):
     }
     
     
+@app.delete("/documenti/{nome}")
+def elimina_documento(nome: str):
+    """Rimuove un PDF e il suo indice dalla libreria.
+
+    Se il documento eliminato era quello attivo, lo stato torna a
+    'nessun documento attivo'.
+
+    Args:
+        nome: nome del PDF da eliminare.
+
+    Raises:
+        HTTPException: 404 se il documento non esiste.
+
+    Returns:
+        Il nome del documento eliminato.
+    """
+    percorso_pdf = CARTELLA_UPLOAD / nome
+    if not percorso_pdf.exists():
+        raise HTTPException(status_code=404, detail="Documento non trovato.")
+
+    percorso_pdf.unlink()
+
+    indice_da_rimuovere = percorso_indice(nome)
+    if indice_da_rimuovere.exists():
+        indice_da_rimuovere.unlink()
+
+    if stato["documento"] == nome:
+        stato["documento"] = None
+        stato["indice"] = []
+
+    return {"nome": nome}
+    
 @app.get("/debug-cerca")
 def debug_cerca(domanda: str, quanti: int = 3):
     """Endpoint diagnostico: mostra i pezzi recuperati per una domanda.
