@@ -1,0 +1,22 @@
+[
+ {
+  "domanda": "Cosa è un impulso?",
+  "chunk_atteso_contiene": "Dare Pugni in Faccia",
+  "documento": "lancer"
+},
+  {
+  "domanda": "Come funziona una copertura?",
+  "chunk_atteso_contiene": "VERIFICARE LA COPERTURA",
+  "documento": "lancer"
+},
+  {
+  "domanda": "Cosa è un LANCER?",
+  "chunk_atteso_contiene": "non si diventa lancer ottenendo medaglie",
+  "documento": "lancer"
+},
+  {
+    "domanda": "Cosa è una sessione zero?",
+    "chunk_atteso_contiene": "LA PRIMA SESSIONE",
+    "documento": "lancer"
+  }
+]
