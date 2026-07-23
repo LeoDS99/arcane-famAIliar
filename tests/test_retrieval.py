@@ -18,7 +18,9 @@ def carica_golden_set():
         return json.load(f)
 
 
-@pytest.mark.parametrize("caso", carica_golden_set())
+CASI = carica_golden_set()
+
+@pytest.mark.parametrize("caso", CASI, ids=[c["domanda"] for c in CASI])
 def test_retrieval_trova_il_pezzo_atteso(caso):
     """Il pezzo atteso deve comparire tra i risultati restituiti da cerca()."""
     indice = carica_indice(CARTELLA_INDICI / f"{caso['documento']}.json")
