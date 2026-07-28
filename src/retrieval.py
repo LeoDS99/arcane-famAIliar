@@ -3,7 +3,7 @@ import json
 import os
 import httpx
 from src.embeddings import crea_embedding, somiglianza
-from src.config import OLLAMA_HOST
+from src.config import OLLAMA_HOST, TOP_K
 
 def carica_indice(percorso):
     """Carica un indice di embedding da disco.
@@ -21,24 +21,9 @@ def carica_indice(percorso):
         return []
     with open(percorso, "r", encoding="utf-8") as f:
         return json.load(f)
-    """Carica l'indice degli embedding da disco.
-
-    Se il file non esiste ancora (es. nessun PDF è stato indicizzato),
-    restituisce una lista vuota invece di sollevare un'eccezione, così
-    l'applicazione può avviarsi comunque.
-
-    Args:
-        percorso: percorso del file JSON dell'indice.
-
-    Returns:
-        La lista dei pezzi indicizzati, o una lista vuota se il file manca.
-    """
-    if not os.path.exists(percorso):
-        return []
-    with open(percorso, "r", encoding="utf-8") as f:
-        return json.load(f)
     
-def cerca(domanda, indice, quanti=3):
+    
+def cerca(domanda, indice, quanti=TOP_K):
     #trasforma la domanda in embdedding
     emd_domanda = crea_embedding(domanda)
     
@@ -147,15 +132,3 @@ RISPOSTA:"""
             if frammento:
                 yield ("frammento", frammento)
 
-if __name__ == "__main__":
-    print("Carico l'indice...")
-    indice = carica_indice()
-    print("Fai una domanda sul manuale (scrivi 'esci' per uscire)\n")
-
-    while True:
-        domanda = input("Tu: ")
-        if domanda == "esci":
-            break
-
-        risposta = rispondi(domanda, indice)
-        print(f"\nAssistente: {risposta}\n")

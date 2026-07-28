@@ -11,3 +11,8 @@ CARTELLA_UPLOAD = "uploads"
 
 # Cartella degli indici, uno per ogni PDF indicizzato.
 CARTELLA_INDICI = "indici"
+
+# Numero di pezzi più rilevanti da recuperare per ogni domanda (top-k).
+# Valore di partenza: 3. Andrà tarato sui dati veri quando l'eval suite
+# permetterà di misurare l'effetto di k sul retrieval.
+TOP_K = 3
