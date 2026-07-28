@@ -1,18 +1,42 @@
+from src.config import DIMENSIONE_CHUNK, SOVRAPPOSIZIONE
 
+def spezza_testo(testo, dimensione=DIMENSIONE_CHUNK, sovrapposizione=SOVRAPPOSIZIONE):
+    """Spezza un testo in pezzi di lunghezza fissa con sovrapposizione.
 
-def spezza_testo(testo, dimensione = 1000):
-    chunk = []                               # la lista dove metto i pezzi
+    Ogni pezzo ripete gli ultimi 'sovrapposizione' caratteri del
+    precedente, così un concetto a cavallo del taglio resta intero
+    in almeno uno dei due pezzi.
+
+    Args:
+        testo: il testo da spezzare.
+        dimensione: lunghezza in caratteri di ogni pezzo.
+        sovrapposizione: caratteri ripetuti tra un pezzo e il successivo.
+
+    Returns:
+        La lista dei pezzi di testo.
+
+    Raises:
+        ValueError: se sovrapposizione è negativa o >= dimensione.
+    """
+    if sovrapposizione < 0 or sovrapposizione >= dimensione:
+        raise ValueError(
+            "sovrapposizione deve essere tra 0 e dimensione-1, "
+            f"ricevuto sovrapposizione={sovrapposizione}, dimensione={dimensione}"
+        )
+
+  
+    chunk = []
     inizio = 0
-    
+
     while inizio < len(testo):
-        fine = inizio + dimensione       # dove finisce questo pezzo
-        pezzo = testo[inizio:fine]       # ritaglio da 'inizio' a 'fine'
-        chunk.append(pezzo)       # aggiungo il pezzo alla lista
-        inizio = fine               # sposto l'inizio al pezzo successivo
-        
-        
+        fine = inizio + dimensione
+        pezzo = testo[inizio:fine]
+        chunk.append(pezzo)
+        if fine >= len(testo):
+            break
+        inizio = fine - sovrapposizione
+
     return chunk
-    
     
 
 if __name__ == "__main__":

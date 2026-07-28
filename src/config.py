@@ -16,3 +16,10 @@ CARTELLA_INDICI = "indici"
 # Valore di partenza: 3. Andrà tarato sui dati veri quando l'eval suite
 # permetterà di misurare l'effetto di k sul retrieval.
 TOP_K = 3
+# Dimensione (in caratteri) di ogni pezzo in cui viene spezzato il testo.
+DIMENSIONE_CHUNK = 1000
+
+# Sovrapposizione (in caratteri) tra un chunk e il successivo.
+# ~15% della dimensione: un concetto a cavallo del taglio resta intero
+# in almeno uno dei due chunk. Da tarare sui dati con l'eval suite.
+SOVRAPPOSIZIONE = 150

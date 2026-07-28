@@ -7,8 +7,7 @@ from pypdf import PdfReader
 from src.chunking import spezza_testo
 from src.embeddings import crea_embedding
 from src.documenti import percorso_indice
-# Dimensione (in caratteri) di ogni pezzo in cui viene spezzato il testo.
-DIMENSIONE_CHUNK = 1000
+from src.config import DIMENSIONE_CHUNK
 
 logger = logging.getLogger(__name__)
 
