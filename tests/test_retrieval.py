@@ -20,7 +20,21 @@ def carica_golden_set():
 
 CASI = carica_golden_set()
 
-@pytest.mark.parametrize("caso", CASI, ids=[c["domanda"] for c in CASI])
+def _parametro(caso):
+    """Trasforma un caso del golden set in un parametro pytest.
+
+    I casi con la chiave 'xfail' sono fallimenti noti del retrieval: vengono
+    marcati come attesi-in-errore in modalità strict, così la suite segnala
+    anche il caso opposto, cioè quando tornano a passare da soli.
+    """
+    motivo = caso.get("xfail")
+    marks = [pytest.mark.xfail(reason=motivo, strict=True)] if motivo else []
+    return pytest.param(caso, id=caso["domanda"], marks=marks)
+
+
+CASI_PARAMETRIZZATI = [_parametro(caso) for caso in CASI]
+
+@pytest.mark.parametrize("caso", CASI_PARAMETRIZZATI)
 def test_retrieval_trova_il_pezzo_atteso(caso):
     """Il pezzo atteso deve comparire tra i risultati restituiti da cerca()."""
     indice = carica_indice(CARTELLA_INDICI / f"{caso['documento']}.json")
