@@ -1,9 +1,12 @@
 """Ricerca semantica sull'indice: data una domanda, trova i pezzi più rilevanti del manuale."""
 import json
 import os
+
 import httpx
-from src.embeddings import crea_embedding, somiglianza
+
 from src.config import OLLAMA_HOST, TOP_K
+from src.embeddings import crea_embedding, somiglianza
+
 
 def carica_indice(percorso):
     """Carica un indice di embedding da disco.
