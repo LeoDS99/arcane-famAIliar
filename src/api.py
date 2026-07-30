@@ -1,16 +1,16 @@
 """API web che espone l'assistente RAG via HTTP."""
 import json
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from src.retrieval import carica_indice, rispondi, rispondi_stream
-from src.indicizza import indicizza_pdf, indicizza_pdf_stream
 from src.documenti import elenca_documenti, percorso_indice
-
+from src.indicizza import indicizza_pdf_stream
+from src.retrieval import carica_indice, rispondi, rispondi_stream
 
 app = FastAPI()
 app.add_middleware(
@@ -197,7 +197,7 @@ def debug_cerca(domanda: str, quanti: int = 3):
     }
 
 @app.post("/carica")
-async def carica(file: UploadFile = File(...)):
+async def carica(file: Annotated[UploadFile, File(...)]):
     """Riceve un PDF, ne verifica la validità e lo salva su disco.
 
     Il file viene accettato solo se è un vero PDF (controllo sulla firma

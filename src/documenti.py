@@ -6,7 +6,7 @@ CARTELLA_INDICI, con lo stesso nome normalizzato ed estensione .json.
 import re
 from pathlib import Path
 
-from src.config import CARTELLA_UPLOAD, CARTELLA_INDICI
+from src.config import CARTELLA_INDICI, CARTELLA_UPLOAD
 
 
 def normalizza_nome(nome_file: str) -> str:

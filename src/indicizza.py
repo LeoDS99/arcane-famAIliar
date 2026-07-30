@@ -5,9 +5,9 @@ from pathlib import Path
 from pypdf import PdfReader
 
 from src.chunking import spezza_testo
-from src.embeddings import crea_embedding
-from src.documenti import percorso_indice
 from src.config import DIMENSIONE_CHUNK
+from src.documenti import percorso_indice
+from src.embeddings import crea_embedding
 
 logger = logging.getLogger(__name__)
 

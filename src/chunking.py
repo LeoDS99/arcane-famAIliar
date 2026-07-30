@@ -1,5 +1,6 @@
 from src.config import DIMENSIONE_CHUNK, SOVRAPPOSIZIONE
 
+
 def spezza_testo(testo, dimensione=DIMENSIONE_CHUNK, sovrapposizione=SOVRAPPOSIZIONE):
     """Spezza un testo in pezzi di lunghezza fissa con sovrapposizione.
 
