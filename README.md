@@ -2,6 +2,8 @@
 
 > A local, privacy-first RAG assistant that answers questions about any PDF document — powered by Ollama, running entirely on your machine.
 
+![CI](https://github.com/LeoDS99/arcane-famAIliar/actions/workflows/ci.yml/badge.svg)
+
 ![Arcane famAIliar chat interface](docs/chat.png)
 
 ## Overview
@@ -24,7 +26,7 @@ flowchart LR
     subgraph Backend[FastAPI backend]
         UP[/carica<br/>save PDF/]
         IDXS[/indicizza-stream<br/>index + SSE progress/]
-        ASK[/chiedi<br/>ask/]
+        ASK[/chiedi-stream<br/>ask · SSE/]
     end
     subgraph Ollama[Ollama · local]
         EMB[nomic-embed-text]
