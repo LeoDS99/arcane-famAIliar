@@ -34,6 +34,7 @@ def _parametro(caso):
 
 CASI_PARAMETRIZZATI = [_parametro(caso) for caso in CASI]
 
+@pytest.mark.integration
 @pytest.mark.parametrize("caso", CASI_PARAMETRIZZATI)
 def test_retrieval_trova_il_pezzo_atteso(caso):
     """Il pezzo atteso deve comparire tra i risultati restituiti da cerca()."""
