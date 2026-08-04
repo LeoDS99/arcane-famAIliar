@@ -5,7 +5,7 @@ import os
 import httpx
 
 from src.config import OLLAMA_HOST, TOP_K
-from src.embeddings import crea_embedding, somiglianza
+from src.embeddings import somiglianza
 
 
 def carica_indice(percorso):
@@ -26,23 +26,23 @@ def carica_indice(percorso):
         return json.load(f)
     
     
-def cerca(domanda, indice, quanti=TOP_K):
-    #trasforma la domanda in embdedding
-    emd_domanda = crea_embedding(domanda)
-    
-    #Confronto la domanda in embedding
+def cerca(domanda, indice, provider, quanti=TOP_K):
+    # trasforma la domanda in embedding usando il provider iniettato
+    emd_domanda = provider.crea_embedding(domanda)
+
+    # Confronto la domanda in embedding
     punteggi = []
     for pezzo in indice:
         score = somiglianza(emd_domanda, pezzo["embedding"])
         punteggi.append((score, pezzo["testo"]))
-        
-    #Ordino dal più vicino al più lontano e tengo i primi 'quanti'
+
+    # Ordino dal più vicino al più lontano e tengo i primi 'quanti'
     punteggi.sort(reverse=True, key=lambda x: x[0])
     return punteggi[:quanti]
 
-def rispondi(domanda, indice):
+def rispondi(domanda, indice, provider):
     # 1. Trovo i pezzi rilevanti (il retrieval che già funziona)
-    risultati = cerca(domanda, indice)
+    risultati = cerca(domanda, indice, provider)
 
     # 2. Unisco i pezzi trovati in un unico blocco di "contesto"
     contesto = "\n\n".join(testo for _, testo in risultati)
@@ -76,7 +76,8 @@ RISPOSTA:"""
     )
     return risposta.json()["message"]["content"]
 
-def rispondi_stream(domanda, indice):
+def rispondi_stream(domanda, indice, provider):
+    
     """Genera la risposta in streaming, cedendo i frammenti man mano.
 
     Come rispondi(), ma invece di attendere la risposta completa la
@@ -86,12 +87,13 @@ def rispondi_stream(domanda, indice):
     Args:
         domanda: la domanda dell'utente.
         indice: l'indice degli embedding su cui cercare.
+        provider: il provider per la creazione degli embedding.
 
    Yields:
         Tuple (tipo, dato): prima ("fonti", lista dei pezzi usati),
         poi ("frammento", testo) per ogni pezzo di risposta generato.
     """
-    risultati = cerca(domanda, indice)
+    risultati = cerca(domanda, indice, provider)
     contesto = "\n\n".join(testo for _, testo in risultati)
 
     # Prima di generare, comunico da quali pezzi del documento nasce la risposta.

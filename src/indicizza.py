@@ -7,12 +7,11 @@ from pypdf import PdfReader
 from src.chunking import spezza_testo
 from src.config import DIMENSIONE_CHUNK
 from src.documenti import percorso_indice
-from src.embeddings import crea_embedding
 
 logger = logging.getLogger(__name__)
 
 
-def indicizza_pdf_stream(percorso_pdf: str, percorso_indice: str):
+def indicizza_pdf_stream(percorso_pdf: str, percorso_indice: str, provider):
     """Indicizza un PDF cedendo il progresso pezzo per pezzo.
 
     È un generator: per ogni chunk elaborato cede una tupla
@@ -22,6 +21,7 @@ def indicizza_pdf_stream(percorso_pdf: str, percorso_indice: str):
     Args:
         percorso_pdf: percorso del file PDF da indicizzare.
         percorso_indice: percorso del file JSON dove salvare l'indice.
+        provider: il provider per la creazione degli embedding.
 
     Yields:
         Tuple (fatti, totale) man mano che i pezzi vengono elaborati.
@@ -38,7 +38,7 @@ def indicizza_pdf_stream(percorso_pdf: str, percorso_indice: str):
 
     indice = []
     for i, pezzo in enumerate(pezzi):
-        embedding = crea_embedding(pezzo)
+        embedding = provider.crea_embedding(pezzo)
         indice.append({"testo": pezzo, "embedding": embedding})
         yield (i + 1, totale)
 
@@ -48,7 +48,7 @@ def indicizza_pdf_stream(percorso_pdf: str, percorso_indice: str):
 
     logger.info("Indicizzazione completata: %d pezzi salvati", len(indice))
 
-def indicizza_pdf(percorso_pdf: str, percorso_indice: str) -> int:
+def indicizza_pdf(percorso_pdf: str, percorso_indice: str, provider) -> int:
     """Indicizza un PDF e restituisce il numero di pezzi indicizzati.
 
     Wrapper sincrono attorno a indicizza_pdf_stream: consuma tutto il
@@ -58,20 +58,24 @@ def indicizza_pdf(percorso_pdf: str, percorso_indice: str) -> int:
     Args:
         percorso_pdf: percorso del file PDF da indicizzare.
         percorso_indice: percorso del file JSON dove salvare l'indice.
+        provider: il provider per la creazione degli embedding.
 
     Returns:
         Il numero di pezzi indicizzati.
     """
     totale = 0
-    for _, totale in indicizza_pdf_stream(percorso_pdf, percorso_indice):
+    for _, totale in indicizza_pdf_stream(percorso_pdf, percorso_indice, provider):
         pass
     return totale
 
 if __name__ == "__main__":
+    from src.providers import OllamaEmbedding
+
     logging.basicConfig(level=logging.INFO)
     logging.getLogger("httpx").setLevel(logging.WARNING)
 
+    provider = OllamaEmbedding()
     percorso_pdf = "documenti/lancer.pdf"
     destinazione = str(percorso_indice(percorso_pdf))
-    numero_pezzi = indicizza_pdf(percorso_pdf, destinazione)
+    numero_pezzi = indicizza_pdf(percorso_pdf, destinazione, provider)
     print(f"Indicizzati {numero_pezzi} pezzi in {destinazione}")
