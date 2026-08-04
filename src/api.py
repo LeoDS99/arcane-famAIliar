@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from src.documenti import elenca_documenti, percorso_indice
 from src.indicizza import indicizza_pdf_stream
+from src.providers import OllamaEmbedding
 from src.retrieval import carica_indice, rispondi, rispondi_stream
 
 app = FastAPI()
@@ -26,6 +27,10 @@ CARTELLA_UPLOAD = Path("uploads")
 # All'avvio nessun documento è attivo: l'utente ne sceglie uno.
 stato = {"documento": None, "indice": []}
 print(">>> Backend pronto. Nessun documento attivo.")
+
+# Provider di embedding usato per tutte le ricerche.
+# Deciso qui (punto d'ingresso dell'app) e passato alle funzioni che ne hanno bisogno.
+embedding_provider = OllamaEmbedding()
 
 class Domanda(BaseModel):
     testo: str
@@ -47,7 +52,7 @@ def chiedi(domanda: Domanda):
     if not domanda.testo.strip():
         raise HTTPException(status_code=400, detail="La domanda non può essere vuota.")
 
-    risposta = rispondi(domanda.testo, stato["indice"])
+    risposta = rispondi(domanda.testo, stato["indice"], embedding_provider)
     return {"risposta": risposta}
 
 @app.get("/chiedi-stream")
@@ -71,7 +76,7 @@ def chiedi_stream(domanda: str):
         raise HTTPException(status_code=400, detail="La domanda non può essere vuota.")
     
     def genera_eventi():
-        for tipo, dato in rispondi_stream(domanda, stato["indice"]):
+        for tipo, dato in rispondi_stream(domanda, stato["indice"], embedding_provider):
             yield f"data: {json.dumps({tipo: dato})}\n\n"
 
         yield f"data: {json.dumps({'completato': True})}\n\n"
@@ -183,7 +188,7 @@ def debug_cerca(domanda: str, quanti: int = 3):
     """
     from src.retrieval import cerca
 
-    risultati = cerca(domanda, stato["indice"], quanti=quanti)
+    risultati = cerca(domanda, stato["indice"], embedding_provider, quanti=quanti)
 
     return {
         "domanda": domanda,

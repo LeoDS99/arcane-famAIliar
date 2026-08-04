@@ -5,12 +5,13 @@ from pathlib import Path
 
 import pytest
 
+from src.providers import OllamaEmbedding
 from src.retrieval import carica_indice, cerca
 
 RADICE = Path(__file__).resolve().parent.parent
 PERCORSO_GOLDEN_SET = Path(__file__).resolve().parent / "golden_set.json"
 CARTELLA_INDICI = RADICE / "indici"
-
+PROVIDER = OllamaEmbedding()
 
 def carica_golden_set():
     """Legge i casi di test dal golden set su disco."""
@@ -41,7 +42,7 @@ def test_retrieval_trova_il_pezzo_atteso(caso):
     indice = carica_indice(CARTELLA_INDICI / f"{caso['documento']}.json")
     assert indice, f"Indice vuoto o mancante per '{caso['documento']}'"
 
-    risultati = cerca(caso["domanda"], indice)
+    risultati = cerca(caso["domanda"], indice, PROVIDER)
     testi = [testo for _, testo in risultati]
 
     assert any(caso["chunk_atteso_contiene"] in testo for testo in testi), (
